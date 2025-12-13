@@ -22,6 +22,7 @@ import (
 	"sync"
 
 	"github.com/godbus/dbus/v5"
+	"github.com/wailsapp/wails/v3/internal/assetserver"
 	"github.com/wailsapp/wails/v3/internal/operatingsystem"
 	"github.com/wailsapp/wails/v3/pkg/events"
 )
@@ -220,6 +221,12 @@ func newPlatformApp(parent *App) *linuxApp {
 	if parent.options.Linux.ProgramName != "" {
 		setProgramName(parent.options.Linux.ProgramName)
 	}
+
+	// Configure GStreamer workaround options for the asset server
+	assetserver.SetGStreamerOptions(
+		parent.options.Linux.DisableGStreamerFix,
+		parent.options.Linux.EnableGStreamerCaching,
+	)
 
 	return app
 }

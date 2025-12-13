@@ -149,11 +149,21 @@ Or manually verify with `wails3 doctor`. [Skip to First App →](/quick-start/fi
            sudo apt update
            sudo apt install build-essential pkg-config libgtk-4-dev libwebkitgtk-6.0-dev
            ```
+
+           **For audio/video playback** (optional but recommended):
+           ```bash
+           sudo apt install gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly
+           ```
          </TabItem>
 
          <TabItem label="Fedora">
            ```bash
            sudo dnf install gcc pkg-config gtk4-devel webkitgtk6.0-devel
+           ```
+
+           **For audio/video playback** (optional but recommended):
+           ```bash
+           sudo dnf install gstreamer1-plugins-good gstreamer1-plugins-bad-free gstreamer1-plugins-ugly-free
            ```
          </TabItem>
 
@@ -179,6 +189,11 @@ Or manually verify with `wails3 doctor`. [Skip to First App →](/quick-start/fi
            Add to your `shell.nix` or `devShell`:
            ```nix
            buildInputs = with pkgs; [ webkitgtk_6_0 gtk4 pkg-config gcc ];
+           ```
+
+           **For audio/video playback** (optional but recommended):
+           ```bash
+           sudo pacman -S gst-plugins-good gst-plugins-bad gst-plugins-ugly
            ```
          </TabItem>
 

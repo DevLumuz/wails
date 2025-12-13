@@ -92,10 +92,6 @@ if (hasDOM) {
     window._wails.handleDragOver = handleDragOver;
 }
 
-if (hasDOM) {
-    System.invoke("wails:runtime:ready");
-}
-
 /**
  * Loads a script from the given URL if it exists.
  * Uses HEAD request to check existence, then injects a script tag.
@@ -118,7 +114,33 @@ export function loadOptionalScript(url: string): Promise<void> {
         .catch(() => {}); // Silently ignore - script is optional
 }
 
-// Load custom.js if available (used by server mode for WebSocket events, etc.)
+/**
+ * Loads platform-specific code and injects it inline before signaling ready.
+ * This allows the backend to inject OS-specific fixes (e.g., Linux media
+ * interceptor) so they're active before the frontend starts rendering
+ * <audio>/<video> elements. Unlike loadOptionalScript, this blocks
+ * "wails:runtime:ready" until the fetch settles.
+ */
+function loadPlatformScript(): Promise<void> {
+    return fetch("/wails/platform.js")
+        .then(response => response.text())
+        .then(code => {
+            if (code && code.trim().length > 0) {
+                const script = document.createElement("script");
+                script.textContent = code;
+                document.head.appendChild(script);
+            }
+        })
+        .catch(err => {
+            console.debug("[Wails] No platform-specific code to load:", err);
+        });
+}
+
 if (hasDOM) {
-    loadOptionalScript('/wails/custom.js');
+    loadPlatformScript().finally(() => {
+        System.invoke("wails:runtime:ready");
+
+        // Load custom.js if available (used by server mode for WebSocket events, etc.)
+        loadOptionalScript('/wails/custom.js');
+    });
 }
