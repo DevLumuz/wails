@@ -257,6 +257,23 @@
         </div>
     </div>
     
+    <!-- ===== Dynamically-added Drop Target (repro of #5019) ===== -->
+    <h2>Dynamic Drop Target</h2>
+    <div class="instructions">
+        <p>
+            This zone is added to the DOM <strong>2 seconds after load</strong> via
+            <code>createElement</code> + <code>appendChild</code> (like a React mount or
+            an HTMX swap). Dropping files here must work exactly like the static zone
+            above — issue <code>#5019</code> claims it doesn't.
+        </p>
+    </div>
+
+    <div class="external-section" id="dynamic-section">
+        <div class="drop-zone" id="dynamic-placeholder">
+            <p>Dynamic drop zone appears here in <span id="dynamic-countdown">2</span>s…</p>
+        </div>
+    </div>
+
     <!-- ===== Internal Drag and Drop ===== -->
     <h2>Internal Drag and Drop</h2>
     <div class="instructions">
@@ -360,10 +377,39 @@
             let info = `External: ${files.length} file(s) dropped`;
             if (details) {
                 info += ` at (${details.x}, ${details.y})`;
+                if (details.id) {
+                    info += ` on #${details.id}`;
+                }
             }
             dropDetails.textContent = info;
         });
-        
+
+        // ===== Dynamic Drop Target (repro of #5019) =====
+        // The element carrying data-file-drop-target does NOT exist at load time:
+        // it's created and attached later, like a React mount or an HTMX swap.
+        // Wails resolves targets live via elementFromPoint at drop time, so this
+        // must behave identically to the static zone.
+        let countdown = 2;
+        const countdownEl = document.getElementById('dynamic-countdown');
+        const countdownTimer = setInterval(() => {
+            countdown--;
+            if (countdown > 0) {
+                countdownEl.textContent = countdown;
+                return;
+            }
+            clearInterval(countdownTimer);
+
+            const zone = document.createElement('div');
+            zone.className = 'drop-zone';
+            zone.id = 'dynamic-drop-zone';
+            zone.setAttribute('data-file-drop-target', '');
+            const p = document.createElement('p');
+            p.textContent = 'Dynamically-added zone — drop files here (must work like the static one)';
+            zone.appendChild(p);
+
+            document.getElementById('dynamic-placeholder').replaceWith(zone);
+        }, 1000);
+
         // ===== Internal Drag and Drop =====
         const draggableItems = document.querySelectorAll('.draggable-item');
         const dropZones = document.querySelectorAll('.internal-drop-zone');
