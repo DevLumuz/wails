@@ -433,6 +433,22 @@ v3/internal/assetserver/webview/
 
 ## Changelog
 
+### 2026-07-02 (fork DevLumuz, branch `migrateV2-V3`)
+- Migrated upstream PR #4782 (fix #4412: audio/video playback on WebKitGTK via
+  `/wails/platform.js` blob-URL interceptor) — cherry-pick `201e9b751` of upstream
+  `cb377cc29`, one manual conflict resolved in `@wailsio/runtime/src/index.ts`
+  (kept master's non-blocking `custom.js` loading inside the new blocking
+  `loadPlatformScript().finally()`).
+- **GTK3/GTK4 parity**: PR predates the GTK3 legacy split, so its
+  `assetserver.SetGStreamerOptions(...)` wiring only existed in `application_linux.go`;
+  added the same call to `application_linux_gtk3.go` (commit `44cb37ea1`) — the
+  WebKitGTK/GStreamer URI-handler gap is independent of the GTK major version.
+- Rebuilt bundled runtime (`runtime.js` / `runtime.debug.js`) so the new
+  `loadPlatformScript()` actually ships to apps.
+- Verified both stacks compile on Fedora 43 (GTK4 4.20.4 + WebKitGTK 2.52.4, and
+  `-tags gtk3` with GTK 3.24 + WebKit2GTK 4.1); examples `audio-video`,
+  `drag-n-drop`, `frameless`, `window`, `window-api` build clean.
+
 ### 2026-01-07 (Session 11)
 - Fixed GTK4 dialog system bugs
 - **File Dialog Fix**: Removed premature `g_object_unref()` that freed dialog before async callback
