@@ -41,11 +41,6 @@ type linuxWebviewWindow struct {
 	lastX, lastY  int
 	gtkmenu       pointer
 	ctxMenuOpened bool
-	// bgCSSProvider is the display-wide CSS provider painting #webview-box's
-	// background (GTK4 only — see setBackgroundColour in linux_cgo.go). Kept
-	// so a later SetBackgroundColour call replaces it instead of stacking a
-	// new provider on top of the display on every call.
-	bgCSSProvider pointer
 
 	moveDebouncer     func(func())
 	resizeDebouncer   func(func())
