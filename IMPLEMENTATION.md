@@ -433,6 +433,24 @@ v3/internal/assetserver/webview/
 
 ## Changelog
 
+### 2026-07-02 (fork DevLumuz, branch `migrateV2-V3`) — drop coordinates fix
+- **fix(linux): GTK4 native file-drop coordinates arrive in physical pixels** while the
+  JS runtime treats them as logical/CSS pixels (`HandlePlatformFileDrop` →
+  `elementFromPoint`). Under fractional scaling (125%) any drop below/right of
+  ~1/scale of the window resolved outside the CSS viewport → `elementFromPoint`
+  returned null → the drop was **silently discarded** (never reached Go). Elsewhere it
+  resolved a wrongly-offset element and only worked if a `data-file-drop-target`
+  ancestor happened to cover it.
+- Fix in `linux_cgo.go onDropFiles`: inject the drop into the page dividing by the live
+  `window.devicePixelRatio` (exact per-page, no-op at scale 1) + `Math.round` because
+  the runtime echoes x/y back to Go whose `fileDropPayload` declares ints. Bypasses
+  `InitiateFrontendDropProcessing` deliberately — that path is shared with
+  macOS/Windows, whose coordinates are already logical.
+- GTK3 legacy path (`onUriList`) NOT touched: coordinate space unverified there
+  (X11-era stack, no repro available); revisit if anyone reports it.
+- Found while migrating a real app (VICLAW-DESK): the `drag-n-drop` example never
+  shows it because its drop zones sit in the upper area of a small window.
+
 ### 2026-07-02 (fork DevLumuz, branch `migrateV2-V3`)
 - Migrated upstream PR #4782 (fix #4412: audio/video playback on WebKitGTK via
   `/wails/platform.js` blob-URL interceptor) — cherry-pick `201e9b751` of upstream
