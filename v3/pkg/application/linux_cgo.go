@@ -1340,6 +1340,26 @@ func (w *linuxWebviewWindow) setTransparent() {
 func (w *linuxWebviewWindow) setBackgroundColour(colour RGBA) {
 	rgba := C.GdkRGBA{C.float(colour.Red) / 255.0, C.float(colour.Green) / 255.0, C.float(colour.Blue) / 255.0, C.float(colour.Alpha) / 255.0}
 	C.webkit_web_view_set_background_color(w.webKitWebView(), &rgba)
+
+	// Paint #webview-box (the GtkBox wrapping the webview, see windowNew)
+	// with the same colour, mirroring what the GTK3 backend already does.
+	// Without this, whenever the webview's own texture isn't ready for a
+	// frame (a transient repaint gap — e.g. a Wayland fractional-scale
+	// surface renegotiation), GSK composes the vbox behind it, which falls
+	// back to the raw GTK theme background instead of the app's colour.
+	// gtk_style_context_add_provider_for_display (not deprecated, GTK
+	// 4.0+) replaces gtk_style_context_add_provider (deprecated since
+	// 4.10) used by the GTK3 path.
+	display := C.gdk_display_get_default()
+	if w.bgCSSProvider != nil {
+		C.gtk_style_context_remove_provider_for_display(display, (*C.GtkStyleProvider)(unsafe.Pointer(w.bgCSSProvider)))
+	}
+	cssStr := C.CString(fmt.Sprintf("#webview-box {background-color: rgba(%d, %d, %d, %1.2f);}", colour.Red, colour.Green, colour.Blue, float32(colour.Alpha)/255.0))
+	defer C.free(unsafe.Pointer(cssStr))
+	provider := C.gtk_css_provider_new()
+	C.gtk_css_provider_load_from_data(provider, cssStr, -1)
+	C.gtk_style_context_add_provider_for_display(display, (*C.GtkStyleProvider)(unsafe.Pointer(provider)), C.GTK_STYLE_PROVIDER_PRIORITY_APPLICATION)
+	w.bgCSSProvider = pointer(provider)
 }
 
 func (w *linuxWebviewWindow) setIcon(icon pointer) {
