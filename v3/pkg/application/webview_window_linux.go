@@ -340,10 +340,17 @@ func (w *linuxWebviewWindow) run() {
 	w.setDefaultSize(w.parent.options.Width, w.parent.options.Height)
 	w.setSize(w.parent.options.Width, w.parent.options.Height)
 	w.setZoom(w.parent.options.Zoom)
+	// setBackgroundColour must run unconditionally, matching Windows
+	// (webview_window_windows.go) and macOS (webview_window_darwin.go): a
+	// Solid window still needs its background colour painted natively (GTK3
+	// vbox CSS provider / GTK4 webkit_web_view_set_background_color), or the
+	// GTK theme's default background is exposed during any transient repaint
+	// gap (e.g. Wayland fractional-scale surface renegotiation). Only the
+	// transparency setup is specific to non-Solid modes.
 	if w.parent.options.BackgroundType != BackgroundTypeSolid {
 		w.setTransparent()
-		w.setBackgroundColour(w.parent.options.BackgroundColour)
 	}
+	w.setBackgroundColour(w.parent.options.BackgroundColour)
 
 	w.setFrameless(w.parent.options.Frameless)
 
