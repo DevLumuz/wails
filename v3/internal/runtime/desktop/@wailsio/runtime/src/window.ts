@@ -122,6 +122,7 @@ function cleanupNativeDrag(): void {
  * Called from Go when a file drag enters the window on Linux/macOS.
  */
 function handleDragEnter(): void {
+    console.debug('[DND-DEBUG] handleDragEnter (native bridge fired)');
     // Check if file drops are enabled for this window
     if ((window as any)._wails?.flags?.enableFileDrop === false) {
         return; // File drops disabled, don't activate drag state
@@ -151,11 +152,12 @@ function handleDragOver(x: number, y: number): void {
     
     const targetElement = document.elementFromPoint(x, y);
     const dropTarget = getDropTargetElement(targetElement);
-    
+    console.debug('[DND-DEBUG] handleDragOver', { x, y, innerW: window.innerWidth, innerH: window.innerHeight, dpr: window.devicePixelRatio, targetElement: targetElement?.tagName, dropTarget: !!dropTarget });
+
     if (currentDropTarget && currentDropTarget !== dropTarget) {
         currentDropTarget.classList.remove(DROP_TARGET_ACTIVE_CLASS);
     }
-    
+
     if (dropTarget) {
         dropTarget.classList.add(DROP_TARGET_ACTIVE_CLASS);
         currentDropTarget = dropTarget;
@@ -643,6 +645,7 @@ class Window {
         
         const element = document.elementFromPoint(x, y);
         const dropTarget = getDropTargetElement(element);
+        console.debug('[DND-DEBUG] HandlePlatformFileDrop', { x, y, innerW: window.innerWidth, innerH: window.innerHeight, dpr: window.devicePixelRatio, element: element?.tagName, dropTarget: !!dropTarget });
 
         if (!dropTarget) {
             // Drop was not on a designated drop target - ignore

@@ -873,6 +873,7 @@ function cleanupNativeDrag() {
 }
 function handleDragEnter() {
   var _a3, _b;
+  console.debug("[DND-DEBUG] handleDragEnter (native bridge fired)");
   if (((_b = (_a3 = window._wails) == null ? void 0 : _a3.flags) == null ? void 0 : _b.enableFileDrop) === false) {
     return;
   }
@@ -889,6 +890,7 @@ function handleDragOver(x, y) {
   }
   const targetElement = document.elementFromPoint(x, y);
   const dropTarget = getDropTargetElement(targetElement);
+  console.debug("[DND-DEBUG] handleDragOver", { x, y, innerW: window.innerWidth, innerH: window.innerHeight, dpr: window.devicePixelRatio, targetElement: targetElement == null ? void 0 : targetElement.tagName, dropTarget: !!dropTarget });
   if (currentDropTarget && currentDropTarget !== dropTarget) {
     currentDropTarget.classList.remove(DROP_TARGET_ACTIVE_CLASS);
   }
@@ -1292,6 +1294,7 @@ var _Window = class _Window {
     }
     const element = document.elementFromPoint(x, y);
     const dropTarget = getDropTargetElement(element);
+    console.debug("[DND-DEBUG] HandlePlatformFileDrop", { x, y, innerW: window.innerWidth, innerH: window.innerHeight, dpr: window.devicePixelRatio, element: element == null ? void 0 : element.tagName, dropTarget: !!dropTarget });
     if (!dropTarget) {
       return;
     }
