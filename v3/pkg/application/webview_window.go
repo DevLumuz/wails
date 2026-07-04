@@ -1594,6 +1594,33 @@ func (w *WebviewWindow) ToggleMenuBar() {
 	InvokeSync(w.impl.toggleMenuBar)
 }
 
+// HandleNativeFileDrop is the Linux counterpart of InitiateFrontendDropProcessing:
+// GTK (both GTK3 and GTK4) delivers native file-drop coordinates in physical
+// pixels, but handlePlatformFileDrop (runtime window.ts) uses them with
+// document.elementFromPoint, which expects logical (CSS) pixels. This mismatch
+// isn't limited to fractional display scaling — GTK3/GDK3-Wayland's own scale
+// detection can disagree with the "logical" scale GNOME reports even at 100%.
+// Divide by the live window.devicePixelRatio in-page (self-correcting for
+// whatever that ratio actually is, not just a fixed scale value) — same
+// pattern used for the drag-hover path in HandleDragOver. Bypasses
+// InitiateFrontendDropProcessing on purpose: that path is shared with
+// macOS/Windows, whose coordinates are already logical.
+func (w *WebviewWindow) HandleNativeFileDrop(filenames []string, x int, y int) {
+	if w.impl == nil || w.isDestroyed() {
+		return
+	}
+
+	filenamesJSON, err := json.Marshal(filenames)
+	if err != nil {
+		w.Error("Error marshalling filenames for native file drop: %s", err)
+		return
+	}
+
+	w.ExecJS(fmt.Sprintf(
+		"window._wails.handlePlatformFileDrop(%s, Math.round(%d/window.devicePixelRatio), Math.round(%d/window.devicePixelRatio));",
+		string(filenamesJSON), x, y))
+}
+
 func (w *WebviewWindow) InitiateFrontendDropProcessing(filenames []string, x int, y int) {
 	if w.impl == nil || w.isDestroyed() {
 		return

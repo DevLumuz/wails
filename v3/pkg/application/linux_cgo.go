@@ -3,7 +3,6 @@
 package application
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -1689,23 +1688,12 @@ func onDropFiles(paths **C.char, x C.gint, y C.gint, data C.uintptr_t) {
 		paths = (**C.char)(unsafe.Pointer(uintptr(unsafe.Pointer(paths)) + offset))
 	}
 
-	// GTK4 delivers drop coordinates in physical pixels, but the JS runtime
-	// expects logical (CSS) pixels (see HandlePlatformFileDrop in window.ts).
-	// Under fractional scaling (e.g. 125%) raw coordinates can land outside
-	// the CSS viewport, elementFromPoint returns null and the drop is
-	// silently discarded. Normalise in-page with the live devicePixelRatio
-	// (exact for mixed-DPI and a no-op at scale 1). Bypasses
-	// InitiateFrontendDropProcessing on purpose: that path is shared with
-	// macOS/Windows, whose coordinates are already logical.
-	filenamesJSON, err := json.Marshal(filenames)
-	if err != nil {
-		globalApplication.error("onDropFiles: marshalling filenames: %s", err.Error())
-		return
+	// Physical-vs-logical pixel normalisation lives in the shared
+	// HandleNativeFileDrop (webview_window.go) — same fix applies to GTK3's
+	// onUriList.
+	if w, ok := targetWindow.(*WebviewWindow); ok {
+		w.HandleNativeFileDrop(filenames, int(x), int(y))
 	}
-	// Math.round: el runtime reenvía x/y a Go, cuyo payload los espera int.
-	targetWindow.ExecJS(fmt.Sprintf(
-		"window._wails.handlePlatformFileDrop(%s, Math.round(%d / window.devicePixelRatio), Math.round(%d / window.devicePixelRatio));",
-		string(filenamesJSON), int(x), int(y)))
 }
 
 //export processWindowEvent
