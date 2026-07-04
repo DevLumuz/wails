@@ -863,18 +863,21 @@ func (w *linuxWebviewWindow) execJS(js string) {
 }
 
 // Preallocated buffer for drag-over JS calls
-var dragOverJSBuffer = C.CString(strings.Repeat(" ", 64))
+var dragOverJSBuffer = C.CString(strings.Repeat(" ", 160))
 var emptyWorldName = C.CString("")
 
+// GTK4 delivers drag-motion coordinates in physical pixels, but handleDragOver
+// (runtime window.ts) uses them with document.elementFromPoint, which expects
+// logical (CSS) pixels — same mismatch fixed for the drop-completion path in
+// onDropFiles. Divide by the live devicePixelRatio in-page (no-op at scale 1),
+// Math.round because elementFromPoint wants integers.
 func (w *linuxWebviewWindow) execJSDragOver(x, y int) {
-	buf := (*[64]byte)(unsafe.Pointer(dragOverJSBuffer))
-	n := copy(buf[:], "window._wails.handleDragOver(")
+	buf := (*[160]byte)(unsafe.Pointer(dragOverJSBuffer))
+	n := copy(buf[:], "window._wails.handleDragOver(Math.round(")
 	n += writeInt(buf[n:], x)
-	buf[n] = ','
-	n++
+	n += copy(buf[n:], "/window.devicePixelRatio),Math.round(")
 	n += writeInt(buf[n:], y)
-	buf[n] = ')'
-	n++
+	n += copy(buf[n:], "/window.devicePixelRatio))")
 	buf[n] = 0
 
 	C.webkit_web_view_evaluate_javascript(w.webKitWebView(),

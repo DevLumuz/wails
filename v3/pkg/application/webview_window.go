@@ -1670,7 +1670,12 @@ func (w *WebviewWindow) HandleDragOver(x int, y int) {
 	if impl, ok := w.impl.(interface{ execJSDragOver(x, y int) }); ok {
 		impl.execJSDragOver(x, y)
 	} else {
-		w.impl.execJS(fmt.Sprintf("window._wails.handleDragOver(%d,%d)", x, y))
+		// x/y arrive in native (physical) pixels on Linux; handleDragOver
+		// (runtime window.ts) expects logical (CSS) pixels for elementFromPoint.
+		// Divide by the live devicePixelRatio in-page (no-op at scale 1).
+		w.impl.execJS(fmt.Sprintf(
+			"window._wails.handleDragOver(Math.round(%d/window.devicePixelRatio),Math.round(%d/window.devicePixelRatio))",
+			x, y))
 	}
 }
 
