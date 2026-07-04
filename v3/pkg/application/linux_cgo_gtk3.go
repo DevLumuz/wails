@@ -3,6 +3,7 @@
 package application
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -2086,8 +2087,20 @@ func onUriList(extracted **C.char, x C.gint, y C.gint, data unsafe.Pointer) {
 		return
 	}
 
-	// Send to frontend for drop target detection and filtering
-	targetWindow.InitiateFrontendDropProcessing(filenames, int(x), int(y))
+	// GTK3/GDK3-Wayland can report drag coordinates in physical pixels while
+	// devicePixelRatio in the page disagrees with the "logical" scale shown in
+	// GNOME Settings (confirmed: dpr=1.25 with both monitors set to 100%).
+	// Same physical-vs-logical mismatch already fixed for GTK4 (onDropFiles) —
+	// bypass InitiateFrontendDropProcessing (shared with macOS/Windows, whose
+	// coordinates are already logical) and normalise in-page instead.
+	filenamesJSON, err := json.Marshal(filenames)
+	if err != nil {
+		globalApplication.error("onUriList: marshalling filenames: %s", err.Error())
+		return
+	}
+	targetWindow.ExecJS(fmt.Sprintf(
+		"window._wails.handlePlatformFileDrop(%s, Math.round(%d / window.devicePixelRatio), Math.round(%d / window.devicePixelRatio));",
+		string(filenamesJSON), int(x), int(y)))
 }
 
 var debounceTimer *time.Timer
