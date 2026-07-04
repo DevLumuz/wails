@@ -870,7 +870,6 @@ function cleanupNativeDrag() {
     currentDropTarget.classList.remove(DROP_TARGET_ACTIVE_CLASS);
     currentDropTarget = null;
   }
-  document.dispatchEvent(new CustomEvent("wails:native-drag-leave"));
 }
 function handleDragEnter() {
   var _a3, _b;
@@ -878,7 +877,6 @@ function handleDragEnter() {
     return;
   }
   nativeDragActive = true;
-  document.dispatchEvent(new CustomEvent("wails:native-drag-enter"));
 }
 function handleDragLeave() {
   cleanupNativeDrag();

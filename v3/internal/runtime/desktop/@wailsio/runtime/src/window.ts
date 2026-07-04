@@ -109,12 +109,6 @@ let nativeDragActive = false;
 /**
  * Cleans up native drag state and hover effects.
  * Called on drop or when drag leaves the window.
- *
- * Also fires wails:native-drag-leave on document: on GTK3/WebKit2GTK-4.1,
- * external file drags never reach the page as real DOM drag events (GTK4's
- * GtkDropTarget + WebKitGTK 6.0 do dispatch real DOM events, so apps relying
- * on native dragenter/dragleave already work there without this). This
- * CustomEvent lets app code drive its own visual drop-zone state on GTK3.
  */
 function cleanupNativeDrag(): void {
     nativeDragActive = false;
@@ -122,7 +116,6 @@ function cleanupNativeDrag(): void {
         currentDropTarget.classList.remove(DROP_TARGET_ACTIVE_CLASS);
         currentDropTarget = null;
     }
-    document.dispatchEvent(new CustomEvent('wails:native-drag-leave'));
 }
 
 /**
@@ -134,8 +127,6 @@ function handleDragEnter(): void {
         return; // File drops disabled, don't activate drag state
     }
     nativeDragActive = true;
-    // See cleanupNativeDrag's docblock re: GTK3 vs GTK4.
-    document.dispatchEvent(new CustomEvent('wails:native-drag-enter'));
 }
 
 /**
